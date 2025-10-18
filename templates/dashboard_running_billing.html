@@ -140,9 +140,13 @@
       <h1>APLIKASI BILLING PLN UP3 MEMPAWAH</h1>
     </div>
 
-    {% if message %}
-    <div class="alert">{{ message }}</div>
-    {% endif %}
+ {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
 
     <form method="post" action="{{ url_for('dashboard_running_billing') }}" enctype="multipart/form-data">
       <div>
