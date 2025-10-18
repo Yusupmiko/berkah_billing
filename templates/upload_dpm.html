@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload DPM</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+</head>
+<body class="p-4">
+  <h4>Upload Data DPM</h4>
+  <form action="{{ url_for('upload_dpm') }}" method="POST" enctype="multipart/form-data">
+    <div class="form-group">
+      <label>Pilih File Excel</label>
+      <input type="file" name="file" class="form-control" required>
+    </div>
+    <button class="btn btn-primary">Upload</button>
+    <a href="{{ url_for('dashboard_up3') }}" class="btn btn-secondary">Kembali</a>
+  </form>
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="alert alert-info mt-3">{{ messages[0] }}</div>
+  {% endif %}
+  {% endwith %}
+</body>
+</html>

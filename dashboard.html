@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <div class="card shadow p-4">
+    <h4>Selamat Datang, {{ user.nama_ulp }} 👋</h4>
+    <p><b>Unit:</b> {{ user.unitup }}</p>
+    <p><b>Role:</b> {{ user.role | upper }}</p>
+    <hr>
+    <a href="{{ url_for('billing_data') }}" class="btn btn-primary">Lihat Data Billing</a>
+    <a href="{{ url_for('logout') }}" class="btn btn-danger float-right">Logout</a>
+  </div>
+</div>
+{% endblock %}

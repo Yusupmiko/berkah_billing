@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola User - Admin UP3</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+<div class="container mt-4">
+    <h3>👥 Kelola Data User ULP</h3>
+    <a href="{{ url_for('dashboard_up3') }}" class="btn btn-secondary btn-sm mb-3">⬅ Kembali</a>
+
+    <!-- Form Tambah User -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">Tambah User Baru</h5>
+            <form method="POST" action="{{ url_for('tambah_user') }}">
+                <div class="row">
+                    <div class="col-md-2">
+                        <input type="text" name="unitup" placeholder="Unitup" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" name="nama_ulp" placeholder="Nama ULP" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" name="username" placeholder="Username" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="password" name="password" placeholder="Password" class="form-control" required>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-primary w-100">Tambah</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabel User -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-bordered table-striped align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Unitup</th>
+                        <th>Nama ULP</th>
+                        <th>Username</th>
+                        <th>Dibuat</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>{{ u.id_user }}</td>
+                        <td>{{ u.unitup }}</td>
+                        <td>{{ u.nama_ulp }}</td>
+                        <td>{{ u.username }}</td>
+                        <td>{{ u.created_at }}</td>
+                        <td>
+                            <a href="{{ url_for('hapus_user', id_user=u.id_user) }}" 
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('Hapus user ini?')">Hapus</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

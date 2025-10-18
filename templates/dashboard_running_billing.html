@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="{{ url_for('static', filename='pln.ico') }}" type="image/x-icon">
+  <title>Dashboard Running Billing</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .page-wrapper {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      max-width: 800px;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .table-container {
+      width: 100%;
+      padding: 20px;
+      background-color: #f1f1f1;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .button-container {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .header img { width: 15%; height: auto; }
+    .header h1 { margin: 0; font-size: 1.8em; color: #27b8f2; }
+    label { font-weight: bold; color: #555; }
+    input[type="text"], input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-top: 5px;
+    }
+    button[type="submit"], .btn-kuning {
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button[type="submit"] {
+      background-color: #007BFF;
+      color: #fff;
+      border: none;
+    }
+    button[type="submit"]:hover { background-color: #0056b3; }
+    .btn-kuning {
+      background-color: #FFFF33;
+      color: #000;
+      border: none;
+      text-decoration: none;
+    }
+    .btn-kuning:hover { background-color: #f7ff03; }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px 0;
+    }
+    .tab {
+      padding: 8px 8px;
+      background-color: #007BFF;
+      color: #fff;
+      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .tab:hover, .tab.active {
+      background-color: #FFFF33 !important;
+      color: #000 !important;
+    }
+    .tab-content { display: none; margin-top: 20px; width: 100%; }
+    .active-content { display: block; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    th { background-color: #007BFF; color: #fff; }
+    tr:nth-child(even) { background-color: #f8f9fa; }
+    .alert {
+      padding: 10px;
+      background-color: #ffcccc;
+      color: #a00;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+  </style>
+  <script>
+    function showTab(tabName) {
+      const tabContents = document.querySelectorAll('.tab-content');
+      const tabs = document.querySelectorAll('.tab');
+      tabContents.forEach(c => c.classList.remove('active-content'));
+      tabs.forEach(t => t.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active-content');
+      document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+    }
+    document.addEventListener("DOMContentLoaded", () => showTab('naik'));
+  </script>
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="container">
+    <div class="header">
+      <img src="{{ url_for('static', filename='pln.jpeg') }}" alt="PLN">
+      <h1>APLIKASI BILLING PLN UP3 MEMPAWAH</h1>
+    </div>
+
+    {% if message %}
+    <div class="alert">{{ message }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('dashboard_running_billing') }}" enctype="multipart/form-data">
+      <div>
+        <label for="blth_kini">Periode Bulan Kini (YYYYMM):</label>
+        <input type="text" id="blth_kini" name="blth" value="{{ blth_terakhir }}" required>
+      </div>
+      <div>
+        <label for="file">Upload File Excel:</label>
+        <input type="file" id="file" name="file" accept=".xlsx, .xls" required>
+      </div>
+      <button type="submit">Submit & Upload</button>
+    </form>
+  </div>
+
+  <div class="table-container">
+    <div class="tabs">
+      <div class="tab" data-tab="naik" onclick="showTab('naik')">NAIK 40%</div>
+      <div class="tab" data-tab="turun" onclick="showTab('turun')">TURUN -40%</div>
+      <div class="tab" data-tab="div" onclick="showTab('div')">DIV / NA</div>
+    </div>
+
+    {% for tab, data in [('naik', naik), ('turun', turun), ('div', div)] %}
+    <div id="{{ tab }}" class="tab-content">
+      <div class="button-container">
+        <a href="{{ url_for('view_data') }}" class="btn-kuning">Lihat Data dari Database</a>
+      </div>
+      {% if data %}
+      <table>
+        <thead>
+          <tr>
+            {% for col in data[0].keys() %}
+            <th>{{ col }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in data %}
+          <tr>
+            {% for val in row.values() %}
+            <td>{{ val|safe }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p>Tidak ada data untuk tab ini.</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+</body>
+</html>

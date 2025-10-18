@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin UP3</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      min-height: 100vh;
+      background-color: #f8f9fa;
+      display: flex;
+    }
+    /* Sidebar styling */
+    .sidebar {
+      width: 260px;
+      background-color: #0d6efd;
+      color: white;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100%;
+    }
+    .sidebar .sidebar-header {
+      font-size: 1.3rem;
+      font-weight: bold;
+      text-align: center;
+      padding: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .sidebar a {
+      color: white;
+      text-decoration: none;
+      padding: 12px 20px;
+      display: block;
+      transition: background 0.3s;
+    }
+    .sidebar a:hover {
+      background-color: rgba(255,255,255,0.2);
+    }
+    .submenu {
+      background-color: rgba(255,255,255,0.1);
+      display: none;
+    }
+    .submenu a {
+      padding-left: 40px;
+    }
+    .sidebar .active + .submenu {
+      display: block;
+    }
+    /* Content */
+    .content {
+      margin-left: 260px;
+      padding: 2rem;
+      flex-grow: 1;
+    }
+    .logout-btn {
+      margin-top: auto;
+      padding: 1rem;
+      border-top: 1px solid rgba(255,255,255,0.2);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-header">
+    ⚡ UP3 Dashboard
+  </div>
+
+  <a href="#" class="menu-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+
+  <a href="#" class="menu-item active" onclick="toggleSubmenu(event)">
+    <i class="fas fa-folder"></i> Billing
+  </a>
+  <div class="submenu">
+    <a href="{{ url_for('kelola_user') }}"><i class="fas fa-users-cog"></i> Kelola User ULP</a>
+    <a href="{{ url_for('dashboard_running_billing') }}"><i class="fas fa-database"></i> Kelola Data Billing</a>
+  </div>
+
+  <a href="#"><i class="fas fa-chart-line"></i> Laporan</a>
+  
+  <div class="logout-btn">
+    <a href="{{ url_for('logout') }}" class="btn btn-outline-light w-100">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </a>
+  </div>
+</div>
+
+<!-- Content Area -->
+<div class="content">
+  <h3 class="text-primary fw-bold">Selamat Datang, {{ nama }}</h3>
+  <p class="text-muted">Anda login sebagai <strong>Admin UP3</strong> dan memiliki akses ke seluruh data ULP.</p>
+
+  <div class="card shadow-sm mt-4">
+    <div class="card-body">
+      <h5 class="card-title">📋 Ringkasan Aktivitas</h5>
+      <p class="text-muted">Silakan pilih menu di sidebar kiri untuk mulai mengelola data.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Toggle submenu
+  function toggleSubmenu(event) {
+    event.preventDefault();
+    event.target.classList.toggle("active");
+  }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
