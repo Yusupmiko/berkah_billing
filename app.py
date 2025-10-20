@@ -15,7 +15,7 @@ from flask import render_template, request, redirect, url_for, flash, session
 import pandas as pd
 import numpy as np
 from sqlalchemy import text, String, BigInteger
-
+from sqlalchemy import text
 
 # =================== APP ===================
 app = Flask(__name__)
@@ -142,107 +142,6 @@ def dashboard_up3():
         return redirect(url_for('login'))
     return render_template('dashboard_up3.html', nama=session['nama_ulp'])
 
-# =================== DASHBOARD RUNNING BILLING ===================
-# @app.route('/dashboard_running_billing/', methods=['GET','POST'])
-# def dashboard_running_billing():
-#     if 'loggedin' not in session:
-#         return redirect(url_for('login'))
-
-#     blth_kini = normalize_blth(request.form.get('blth', datetime.now().strftime('%Y%m')))
-#     blth_lalu = get_previous_blth(blth_kini, 1)
-#     blth_lalulalu = get_previous_blth(blth_kini, 2)
-
-#     # ===== UPLOAD DPM =====
-#     if request.method=='POST':
-#         file = request.files.get('file')
-#         if not file or file.filename=='':
-#             flash('Tidak ada file yang dipilih', 'danger')
-#             return redirect(url_for('dashboard_running_billing'))
-
-#         if not allowed_file(file.filename):
-#             flash('Format file tidak didukung (hanya .xlsx atau .xls)', 'danger')
-#             return redirect(url_for('dashboard_running_billing'))
-
-#         filename = secure_filename(file.filename)
-#         filepath = os.path.join(UPLOAD_FOLDER, filename)
-#         file.save(filepath)
-
-#         try:
-#             df_upload = pd.read_excel(filepath)
-#             df_upload.columns = [c.strip().upper() for c in df_upload.columns]
-
-#             # ===== Kolom yang ada di database =====
-#             db_cols = ['BLTH','IDPEL','NAMA','TARIF','DAYA','SLALWBP','LWBPCABUT',
-#                        'LWBPPASANG','SAHLWBP','LWBPPAKAI','DLPD']
-#             df_upload = df_upload[[c for c in df_upload.columns if c in db_cols]]
-
-#             # Tambahkan BLTH jika tidak ada
-#             if 'BLTH' not in df_upload.columns:
-#                 df_upload['BLTH'] = blth_kini
-#             else:
-#                 df_upload['BLTH'] = blth_kini
-
-#             # Pastikan kolom numerik
-#             numeric_cols = ['DAYA','SLALWBP','LWBPCABUT','LWBPPASANG','SAHLWBP','LWBPPAKAI']
-#             for col in numeric_cols:
-#                 if col in df_upload.columns:
-#                     df_upload[col] = pd.to_numeric(df_upload[col], errors='coerce').fillna(0)
-
-#             if 'DLPD' in df_upload.columns:
-#                 df_upload['DLPD'] = df_upload['DLPD'].astype(str).fillna('')
-
-#             # Simpan ke DPM
-#             df_upload.to_sql('dpm', engine, if_exists='append', index=False)
-#             flash(f'File {filename} berhasil diupload dan disimpan ke database.', 'success')
-#         except Exception as e:
-#             flash(f'Gagal memproses file: {e}', 'danger')
-#             return redirect(url_for('dashboard_running_billing'))
-
-#     # ===== AMBIL DATA 3 BULAN TERAKHIR =====
-#     try:
-#         query = text(f"""
-#             SELECT * FROM dpm 
-#             WHERE BLTH IN ('{blth_kini}','{blth_lalu}','{blth_lalulalu}')
-#         """)
-#         df = pd.read_sql(query, engine)
-#     except Exception as e:
-#         flash(f"Gagal membaca data DPM: {e}", 'danger')
-#         return render_template('dashboard_running_billing.html', naik=[], turun=[], div=[], blth_terakhir=blth_kini)
-
-#     if df.empty:
-#         flash("Belum ada data DPM untuk periode ini.", "info")
-#         return render_template('dashboard_running_billing.html', naik=[], turun=[], div=[], blth_terakhir=blth_kini)
-
-#     # ===== HITUNG DELTA & PERSEN =====
-#     df.columns = [c.upper() for c in df.columns]
-#     df_kini = df[df['BLTH']==blth_kini]
-#     df_lalu = df[df['BLTH']==blth_lalu]
-
-#     merged = df_kini.merge(df_lalu[['IDPEL','SAHLWBP']], on='IDPEL', how='left', suffixes=('_KINI','_LALU'))
-#     merged['SAHLWBP_LALU'] = merged['SAHLWBP_LALU'].fillna(0)
-#     merged['DELTA_KWH'] = merged['SAHLWBP_KINI'] - merged['SAHLWBP_LALU']
-#     merged['PERSEN'] = np.where(merged['SAHLWBP_LALU']>0, (merged['DELTA_KWH']/merged['SAHLWBP_LALU'])*100, 0)
-
-#     naik_df = merged[merged['PERSEN']>=40]
-#     turun_df = merged[merged['PERSEN']<=-40]
-#     div_df = merged[(merged['SAHLWBP_KINI'].isna()) | (merged['SAHLWBP_LALU'].isna())]
-
-#     # ===== SIMPAN KE BILLING =====
-#     try:
-#         merged.to_sql('billing', engine, if_exists='replace', index=False)
-#         naik_df.to_sql('billing_naik', engine, if_exists='replace', index=False)
-#         turun_df.to_sql('billing_turun', engine, if_exists='replace', index=False)
-#         div_df.to_sql('billing_div', engine, if_exists='replace', index=False)
-#     except Exception as e:
-#         flash(f"Gagal menyimpan hasil billing ke database: {e}", 'warning')
-
-#     return render_template(
-#         'dashboard_running_billing.html',
-#         naik=naik_df.to_dict(orient='records'),
-#         turun=turun_df.to_dict(orient='records'),
-#         div=div_df.to_dict(orient='records'),
-#         blth_terakhir=blth_kini
-#     )
 
 ########################################################
 
@@ -256,6 +155,28 @@ def dashboard_running_billing():
     blth_kini = normalize_blth(request.form.get('blth', datetime.now().strftime('%Y%m')))
     blth_lalu = get_previous_blth(blth_kini, 1)
     blth_lalulalu = get_previous_blth(blth_kini, 2)
+
+    # ====== HAPUS DATA LEBIH DARI 6 BULAN ======
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("""
+                DELETE FROM dpm
+                WHERE CAST(BLTH AS UNSIGNED) < CAST(
+                    DATE_FORMAT(
+                        DATE_SUB(
+                            STR_TO_DATE(CONCAT(:blth, '01'), '%Y%m%d'),
+                            INTERVAL 6 MONTH
+                        ),
+                        '%Y%m'
+                    ) AS UNSIGNED
+                )
+            """), {"blth": blth_kini})
+            conn.commit()
+    except Exception as e:
+        flash(f"Gagal membersihkan data lama DPM: {e}", "warning")
+
+
+
 
     # ===== Upload File DPM =====
     if request.method == 'POST':
@@ -279,10 +200,8 @@ def dashboard_running_billing():
             db_cols = ['BLTH', 'IDPEL', 'NAMA', 'TARIF', 'DAYA', 'SLALWBP',
                        'LWBPCABUT', 'LWBPPASANG', 'SAHLWBP', 'LWBPPAKAI', 'DLPD']
             df_upload = df_upload[[c for c in df_upload.columns if c in db_cols]]
-
             df_upload['BLTH'] = blth_kini
 
-            # Pastikan kolom numerik valid
             numeric_cols = ['DAYA', 'SLALWBP', 'LWBPCABUT', 'LWBPPASANG', 'SAHLWBP', 'LWBPPAKAI']
             for col in numeric_cols:
                 if col in df_upload.columns:
@@ -296,6 +215,7 @@ def dashboard_running_billing():
         except Exception as e:
             flash(f'Gagal memproses file DPM: {e}', 'danger')
             return redirect(url_for('dashboard_running_billing'))
+
 
     # ===== Ambil Data 3 Bulan =====
     try:
@@ -356,16 +276,50 @@ def dashboard_running_billing():
             'DLPD': kroscek_temp.get('DLPD', '')
         })
 
-        # ===== Tambahkan kolom FOTO + dropdown =====
         path_foto1 = 'https://portalapp.iconpln.co.id/acmt/DisplayBlobServlet1?idpel='
         path_foto2 = '&blth='
-        kroscek['FOTO AKHIR'] = kroscek['IDPEL'].apply(lambda x: f'{path_foto1}{x}{path_foto2}{blth_kini}')
-        kroscek['FOTO LALU'] = kroscek['IDPEL'].apply(lambda x: f'{path_foto1}{x}{path_foto2}{blth_lalu}')
-        kroscek['FOTO LALU2'] = kroscek['IDPEL'].apply(lambda x: f'{path_foto1}{x}{path_foto2}{blth_lalulalu}')
+        kroscek['FOTO AKHIR'] = kroscek['IDPEL'].apply(lambda x: f'<a href="{path_foto1}{x}{path_foto2}{blth_kini}" target="popup" '
+              f'onclick="window.open(\'{path_foto1}{x}{path_foto2}{blth_kini}\', '
+              f'\'popup\', \'width=700,height=700,scrollbars=no,toolbar=no\'); return false;">LINK FOTO</a>')
+        kroscek['FOTO LALU'] = kroscek['IDPEL'].apply(lambda x: f'<a href="{path_foto1}{x}{path_foto2}{blth_lalu}" target="popup" '
+              f'onclick="window.open(\'{path_foto1}{x}{path_foto2}{blth_lalu}\', '
+              f'\'popup\', \'width=700,height=700,scrollbars=no,toolbar=no\'); return false;">LINK FOTO</a>')
+        kroscek['FOTO LALU2'] = kroscek['IDPEL'].apply(lambda x: f'<a href="{path_foto1}{x}{path_foto2}{blth_lalulalu}" target="popup" '
+              f'onclick="window.open(\'{path_foto1}{x}{path_foto2}{blth_lalulalu}\', '
+              f'\'popup\', \'width=700,height=700,scrollbars=no,toolbar=no\'); return false;">LINK FOTO</a>')
 
-        kroscek['HASIL PEMERIKSAAN'] = ''
-        kroscek['TINDAK LANJUT'] = ''
-        kroscek['KETERANGAN'] = ''
+        # Link 3 foto sekaligus, pakai 5 digit terakhir IDPEL sebagai label link
+        kroscek['FOTO 3BLN'] = kroscek['IDPEL'].apply(lambda x: f'<a href="#" onclick="open3Foto(\'{x}\', \'{blth_kini}\'); return false;">{str(x)[-5:]}</a>')
+            # Tambahkan dropdown dan textarea HTML ke dataframe
+        kroscek['HASIL PEMERIKSAAN'] = kroscek['KET'].apply(lambda x: f'''
+        <select class="hasil-pemeriksaan" onfocus="this.options[0].selected = true;">
+            <option value="" disabled selected hidden></option>
+            <option value="SESUAI" {"selected" if x == "SESUAI" else ""}>SESUAI</option>
+            <option value="SALAH STAN" {"selected" if x == "SALAH STAN" else ""}>SALAH STAN</option>
+            <option value="TELAT/SALAH PDL" {"selected" if x == "TELAT/SALAH PDL" else ""}>TELAT/SALAH PDL</option>
+            <option value="SALAH FOTO" {"selected" if x == "SALAH FOTO" else ""}>SALAH FOTO</option>
+            <option value="FOTO BURAM" {"selected" if x == "FOTO BURAM" else ""}>FOTO BURAM</option>
+            <option value="LEBIH TAGIH" {"selected" if x == "LEBIH TAGIH" else ""}>LEBIH TAGIH</option>
+            <option value="BUKAN FOTO KWH" {"selected" if x == "BUKAN FOTO KWH" else ""}>BUKAN FOTO KWH</option>
+            <option value="BENCANA" {"selected" if x == "BENCANA" else ""}>BENCANA</option>
+        </select>
+    ''')
+
+        kroscek['TINDAK LANJUT'] = '''
+        <textarea class="tindak-lanjut" rows="3" cols="30" placeholder="Isi tindak lanjut..."></textarea>
+    '''
+
+        kroscek['KETERANGAN'] = '''
+        <select class="keterangan" onfocus="this.options[0].selected = true;">
+            <option value="" disabled selected hidden></option>
+            <option value="3 BULAN TIDAK DAPAT FOTO STAN">3 BULAN TIDAK DAPAT FOTO STAN</option>
+            <option value="6 BULAN TIDAK DAPAT FOTO STAN">6 BULAN TIDAK DAPAT FOTO STAN</option>
+            <option value="SUDAH BU">SUDAH BU</option>
+            <option value="SALAH FOTO">SALAH FOTO</option>
+            <option value="720">720</option>
+        </select>
+    '''
+
 
         return kroscek
 
@@ -391,12 +345,12 @@ def dashboard_running_billing():
         'PERSEN': String(10),
         'KET': String(20),
         'DLPD': String(100),
-        'FOTO AKHIR': String(255),
-        'FOTO LALU': String(255),
-        'FOTO LALU2': String(255),
-        'HASIL PEMERIKSAAN': String(50),
+        'FOTO AKHIR': Text(),
+        'FOTO LALU': Text(),
+        'FOTO LALU2': Text(),
+        'HASIL PEMERIKSAAN': Text(),
         'TINDAK LANJUT': Text(),
-        'KETERANGAN': String(100)
+        'KETERANGAN': Text()
     }
 
     try:
@@ -421,12 +375,20 @@ def dashboard_running_billing():
 
 
 
-# =================== VIEW DATA ===================
 @app.route("/view_data")
 def view_data():
     data_naik = pd.read_sql("SELECT * FROM billing_naik", engine)
     data_turun = pd.read_sql("SELECT * FROM billing_turun", engine)
     data_div = pd.read_sql("SELECT * FROM billing_div", engine)
+
+    # Daftar kolom yang ingin dibersihkan dari newline
+    text_columns = ['HASIL PEMERIKSAAN', 'TINDAK LANJUT', 'KETERANGAN']
+
+    for df in [data_naik, data_turun, data_div]:
+        for col in text_columns:
+            if col in df.columns:
+                # Hapus \n dan trim spasi
+                df[col] = df[col].astype(str).str.replace(r'[\n\r]+', ' ', regex=True).str.strip()
 
     return render_template(
         "view_data.html",
@@ -434,6 +396,35 @@ def view_data():
         turun_html=data_turun.to_html(classes="table table-striped", index=False, escape=False),
         div_html=data_div.to_html(classes="table table-striped", index=False, escape=False),
     )
+
+    
+@app.route('/update_data', methods=['POST'])
+def update_data():
+    data = request.get_json()
+    idpel = data.get('IDPEL')
+    column = data.get('column')
+    value = data.get('value')
+    table = data.get('table')  # fleksibel: billing, billing_naik, billing_turun, dll
+
+    if not all([idpel, column, table]):
+        return jsonify({"error": "Data tidak lengkap"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        query = f"UPDATE `{table}` SET `{column}` = %s WHERE IDPEL = %s"
+        cursor.execute(query, (value, idpel))
+        conn.commit()
+        return jsonify({"message": "Data berhasil diperbarui"})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)})
+    finally:
+        cursor.close()
+        conn.close()
+
+    
 
 # =================== RUN APP ===================
 if __name__ == '__main__':

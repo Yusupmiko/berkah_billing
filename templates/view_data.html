@@ -129,7 +129,7 @@
 <body>
   <div class="container-fluid mt-4">
     <h2 class="text-center d-flex justify-content-between align-items-center">
-       ADMIN ULP MEMPAWAH 1
+        ADMIN ULP SIANTAN 1
        <button class="btn btn-secondary ml-3" onclick="confirmLogout()">Logout</button> 
     </h2>
 
@@ -153,22 +153,14 @@
     </ul> 
 
     <div class="tab-content" id="dataTabContent">
-      <!-- Tab content for each tab -->
-      <!-- <div class="tab-pane fade show active" id="all-data" role="tabpanel" aria-labelledby="all-data-tab">
-        <div class="table-responsive">
-          {{ result_html | safe }}
-        </div>
-        <button class="btn btn-primary download-button" onclick="downloadAsXLSX('all-data')">Download Data</button>
-        <button class="btn btn-danger download-button" onclick="confirmClearTableData('billing_result')">Hapus Data</button>
-
-      </div> -->
+    
 
       <div class="tab-pane fade" id="naik" role="tabpanel" aria-labelledby="naik-tab">
         <div class="table-responsive">
           {{ naik_html | safe }}
         </div>
         <button class="btn btn-primary download-button" onclick="downloadAsXLSX('naik')">Download Data</button>
-        <button class="btn btn-danger download-button" onclick="confirmClearTableData('billing_naik')">Hapus Data</button>
+        <!-- <button class="btn btn-danger download-button" onclick="confirmClearTableData('billing_naik3')">Hapus Data</button> -->
 
       </div>
 
@@ -177,25 +169,18 @@
           {{ turun_html | safe }}
         </div>
         <button class="btn btn-primary download-button" onclick="downloadAsXLSX('turun')">Download Data</button>
-        <button class="btn btn-danger download-button" onclick="confirmClearTableData('billing_turun')">Hapus Data</button>
+        <!-- <button class="btn btn-danger download-button" onclick="confirmClearTableData('billing_turun3')">Hapus Data</button> -->
 
       </div>
 
-      <!-- <div class="tab-pane fade" id="aman" role="tabpanel" aria-labelledby="aman-tab">
-        <div class="table-responsive">
-          {{ aman_html | safe }}
-        </div>
-        <button class="btn btn-primary download-button" onclick="downloadAsXLSX('aman')">Download Data</button>
-        <button class="btn btn-danger download-button" onclick="confirmClearTableData('billing_aman')">Hapus Data</button>
-
-      </div> -->
+   
 
 	  <div class="tab-pane fade" id="div" role="tabpanel" aria-labelledby="div-tab">
         <div class="table-responsive">
           {{ div_html | safe }}
 	</div>
 	<button class="btn btn-primary download-button" onclick="downloadAsXLSX('div')">Download Data</button>
-	<button class="btn btn-danger download-button" onclick="confirmClearTableData('billing_div')">Hapus Data</button>
+	<!-- <button class="btn btn-danger download-button" onclick="confirmClearTableData('billing_div3')">Hapus Data</button> -->
 
   </div>
 
@@ -248,7 +233,6 @@
     }
     </script>
   
-  
   <script>
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -262,7 +246,6 @@ document.addEventListener("DOMContentLoaded", () => {
       this.classList.add("highlight");
     });
   });
-
 
   // Memberi kelas khusus pada kolom 'SAHLWBP' di semua tabel
   document.querySelectorAll(".tab-pane table").forEach(table => {
@@ -512,7 +495,111 @@ function confirmLogout() {
   }
 
 
-  </script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    // Mapping kolom friendly JS ke nama kolom DB MySQL
+    const columnMap = {
+        "hasil_pemeriksaan": "HASIL PEMERIKSAAN",
+        "tindak_lanjut": "TINDAK LANJUT",
+        "keterangan": "KETERANGAN"
+    };
+
+    // Fungsi untuk mengirim perubahan ke Flask
+    function autoSave(idpel, columnFriendly, value, table) {
+        if (!idpel || !columnFriendly || !table) return; // safety check
+        const columnDB = columnMap[columnFriendly]; // mapping ke nama kolom DB
+
+        fetch('/update_data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ IDPEL: idpel, column: columnDB, value: value, table: table })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Auto-save gagal:', data.error);
+            } else {
+                console.log('Auto-save sukses:', data.message);
+            }
+        })
+        .catch(err => console.error('Auto-save error:', err));
+    }
+
+    // Event listener untuk dropdown
+    document.querySelectorAll("select[data-column]").forEach(sel => {
+        sel.addEventListener("change", function() {
+            const row = this.closest("tr");
+            autoSave(row.dataset.idpel, this.dataset.column, this.value, row.dataset.table);
+        });
+    });
+
+    // Event listener untuk textarea
+    document.querySelectorAll("textarea[data-column]").forEach(ta => {
+        ta.addEventListener("input", function() {
+            const row = this.closest("tr");
+            autoSave(row.dataset.idpel, this.dataset.column, this.value, row.dataset.table);
+        });
+    });
+
+    // --- Auto-save semua perubahan sebelum logout ---
+    window.confirmLogout = function() {
+        Swal.fire({
+            title: 'Anda yakin ingin logout?',
+            text: "Setelah logout, Anda harus login kembali!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, Logout',
+            cancelButtonText: 'Batal'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                // Ambil semua data select dan textarea
+                const dataToSave = [];
+                document.querySelectorAll("tr[data-idpel]").forEach(row => {
+                    const idpel = row.dataset.idpel;
+                    const table = row.dataset.table;
+
+                    row.querySelectorAll("select[data-column]").forEach(sel => {
+                        dataToSave.push({
+                            IDPEL: idpel,
+                            column: columnMap[sel.dataset.column],
+                            value: sel.value,
+                            table: table
+                        });
+                    });
+
+                    row.querySelectorAll("textarea[data-column]").forEach(ta => {
+                        dataToSave.push({
+                            IDPEL: idpel,
+                            column: columnMap[ta.dataset.column],
+                            value: ta.value,
+                            table: table
+                        });
+                    });
+                });
+
+                // Kirim semua data secara paralel
+                await Promise.all(dataToSave.map(d => 
+                    fetch('/update_data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(d)
+                    })
+                ));
+
+                // Logout setelah semua data tersimpan
+                window.location.href = "{{ url_for('logout') }}";
+            }
+        });
+    }
+});
+</script>
+
+
+ 
+
+  
   <style>
   /* Gaya untuk memberikan highlight pada baris yang dipilih */
   .highlight {
