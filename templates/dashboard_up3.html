@@ -8,11 +8,11 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <style>
     body {
-      min-height: 100vh;
       background-color: #f8f9fa;
+      min-height: 100vh;
       display: flex;
     }
-    /* Sidebar styling */
+    /* Sidebar */
     .sidebar {
       width: 260px;
       background-color: #0d6efd;
@@ -22,7 +22,9 @@
       flex-direction: column;
       position: fixed;
       height: 100%;
+      transition: width 0.3s;
     }
+    .sidebar.collapsed { width: 70px; }
     .sidebar .sidebar-header {
       font-size: 1.3rem;
       font-weight: bold;
@@ -37,52 +39,60 @@
       display: block;
       transition: background 0.3s;
     }
-    .sidebar a:hover {
-      background-color: rgba(255,255,255,0.2);
-    }
+    .sidebar a:hover { background-color: rgba(255,255,255,0.2); }
     .submenu {
       background-color: rgba(255,255,255,0.1);
       display: none;
     }
-    .submenu a {
-      padding-left: 40px;
-    }
-    .sidebar .active + .submenu {
-      display: block;
-    }
+    .submenu a { padding-left: 40px; }
+    .sidebar .active + .submenu { display: block; }
+
     /* Content */
     .content {
       margin-left: 260px;
       padding: 2rem;
       flex-grow: 1;
+      transition: margin-left 0.3s;
     }
+    .sidebar.collapsed + .content { margin-left: 70px; }
+
     .logout-btn {
       margin-top: auto;
       padding: 1rem;
       border-top: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .filter-card {
+      background: white;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    table th, table td {
+      text-align: center;
+      vertical-align: middle;
     }
   </style>
 </head>
 <body>
 
 <!-- Sidebar -->
-<div class="sidebar">
-  <div class="sidebar-header">
-    ⚡ UP3 Dashboard
-  </div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">⚡ UP3 Admin</div>
 
   <a href="#" class="menu-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
 
   <a href="#" class="menu-item active" onclick="toggleSubmenu(event)">
-    <i class="fas fa-folder"></i> Billing
+    <i class="fas fa-database"></i> Data Billing
   </a>
   <div class="submenu">
+    <a href="{{ url_for('dashboard_running_billing') }}"><i class="fas fa-play-circle"></i> Jalankan Billing</a>
     <a href="{{ url_for('kelola_user') }}"><i class="fas fa-users-cog"></i> Kelola User ULP</a>
-    <a href="{{ url_for('dashboard_running_billing') }}"><i class="fas fa-database"></i> Kelola Data Billing</a>
   </div>
 
   <a href="#"><i class="fas fa-chart-line"></i> Laporan</a>
-  
+
   <div class="logout-btn">
     <a href="{{ url_for('logout') }}" class="btn btn-outline-light w-100">
       <i class="fas fa-sign-out-alt"></i> Logout
@@ -92,13 +102,57 @@
 
 <!-- Content Area -->
 <div class="content">
-  <h3 class="text-primary fw-bold">Selamat Datang, {{ nama }}</h3>
-  <p class="text-muted">Anda login sebagai <strong>Admin UP3</strong> dan memiliki akses ke seluruh data ULP.</p>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="text-primary fw-bold mb-0">Selamat Datang, {{ nama }}</h3>
+    <button class="btn btn-outline-primary" onclick="toggleSidebar()">
+      <i class="fas fa-bars"></i>
+    </button>
+  </div>
 
+  <p class="text-muted">Anda login sebagai <strong>Admin UP3</strong> — memiliki akses penuh ke seluruh data ULP.</p>
+
+  <!-- Ringkasan Data Billing -->
   <div class="card shadow-sm mt-4">
     <div class="card-body">
-      <h5 class="card-title">📋 Ringkasan Aktivitas</h5>
-      <p class="text-muted">Silakan pilih menu di sidebar kiri untuk mulai mengelola data.</p>
+      <h5 class="card-title text-primary fw-bold mb-3">
+        <i class="fas fa-table"></i> Ringkasan Data Billing per ULP
+      </h5>
+
+      {% if hasil_billing and hasil_billing|length > 0 %}
+      <table class="table table-striped table-bordered">
+        <thead class="table-primary">
+          <tr>
+            <th>UNITUP</th>
+            <th>NAMA ULP</th>
+            <th>Data Naik</th>
+            <th>Data Turun</th>
+            <th>Data Div</th>
+            <th>Total</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in hasil_billing %}
+          <tr>
+            <td>{{ row.UNITUP }}</td>
+            <td>{{ row.NAMA_ULP }}</td>
+            <td class="text-danger fw-bold">{{ row.naik }}</td>
+            <td class="text-success fw-bold">{{ row.turun }}</td>
+            <td class="text-warning fw-bold">{{ row.divisi }}</td>
+            <td class="fw-bold">{{ row.naik + row.turun + row.divisi }}</td>
+            <td>
+              <a href="/admin_{{ row.NAMA_ULP|lower|replace(' ', '') }}" 
+                 class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-eye"></i> Lihat
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="alert alert-info mb-0">Belum ada data ULP yang diproses.</div>
+      {% endif %}
     </div>
   </div>
 </div>
@@ -109,8 +163,13 @@
     event.preventDefault();
     event.target.classList.toggle("active");
   }
+
+  // Sidebar collapse
+  function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    sidebar.classList.toggle("collapsed");
+    document.querySelector(".content").classList.toggle("collapsed");
+  }
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.
